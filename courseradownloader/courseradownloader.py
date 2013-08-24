@@ -43,7 +43,7 @@ class CourseraDownloader(object):
     # how long to try to open a URL before timing out
     TIMEOUT=60.0
 
-    def __init__(self,username,password,proxy=None,parser=DEFAULT_PARSER,ignorefiles=None, max_path_len=None):
+    def __init__(self,username,password,proxy=None,parser=DEFAULT_PARSER,ignorefiles=None, max_path_len=None,no_optional=False):
         self.username = username
         self.password = password
         self.parser = parser
@@ -56,6 +56,7 @@ class CourseraDownloader(object):
         self.browser = None
         self.proxy = proxy
         self.max_path_len = max_path_len
+        self.no_optional = no_optional
 
     def login(self,className):
         """
@@ -181,6 +182,12 @@ class CourseraDownloader(object):
                     className = head  + "-" + tail
 
                 className = sanitise_filename(className)
+
+                if self.no_optional and "optional" in className.lower():
+                    if "optional" in className.lower():
+                        print "  -- will skip optional lecture %s" % className
+                        continue
+
                 classNames.append(className)
                 classResources = li.find('div', {'class':'course-lecture-item-resource'})
 
@@ -622,6 +629,7 @@ def main():
     parser.add_argument('course_names', nargs="+", metavar='<course name>',
                         type=str, help='one or more course names from the url (e.g., comnets-2012-001)')
     parser.add_argument("--trim-path", dest='trim_path', action='store_true', default=True, help='Trim path names to fit OS constraints (windows only)')
+    parser.add_argument("--no-optional", dest='no_optional', action='store_true', default=False, help='Do not download optional lectures')
     args = parser.parse_args()
 
     # check the parser
@@ -655,7 +663,7 @@ def main():
             pass   
  
     # instantiate the downloader class
-    d = CourseraDownloader(username,password,proxy=args.proxy,parser=html_parser,ignorefiles=args.ignorefiles,max_path_len=max_path_len)
+    d = CourseraDownloader(username,password,proxy=args.proxy,parser=html_parser,ignorefiles=args.ignorefiles,max_path_len=max_path_len,no_optional=args.no_optional)
 
     # authenticate, only need to do this once but need a classaname to get hold
     # of the csrf token, so simply pass the first one
